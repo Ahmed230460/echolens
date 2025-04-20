@@ -28,16 +28,32 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
         progressBar.style.width = '100%';
         const result = await response.json();
         if (response.ok) {
+            // Display Predicted Event and Confidence
             document.getElementById('predictedLabel').textContent = result.predicted_label;
-            document.getElementById('confidence').textContent = result.confidence.toFixed(4);
+            document.getElementById('confidence').textContent = (result.confidence * 100).toFixed(2) + '%';
+
+            // Display Event Summary
             document.getElementById('summary').textContent = result.summary;
+
+            // Display Detected Events
             const eventsList = document.getElementById('events');
             eventsList.innerHTML = '';
             result.events.forEach((event, index) => {
                 const li = document.createElement('li');
-                li.textContent = `Event ${index + 1}: Start ${event.start_time.toFixed(2)}s (Frame ${event.start_frame}), End ${event.end_time.toFixed(2)}s (Frame ${event.end_frame})`;
+                li.className = 'flex items-center space-x-2 text-gray-600';
+                li.innerHTML = `
+                    <span class="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 rounded-full">
+                        ${index + 1}
+                    </span>
+                    <span>
+                        Start: <span class="font-medium">${event.start_time.toFixed(2)}s</span> (Frame ${event.start_frame}) - 
+                        End: <span class="font-medium">${event.end_time.toFixed(2)}s</span> (Frame ${event.end_frame})
+                    </span>
+                `;
                 eventsList.appendChild(li);
             });
+
+            // Show results with animation
             document.getElementById('results').classList.remove('hidden');
         } else {
             alert('Error: ' + result.error);

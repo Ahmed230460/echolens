@@ -11,24 +11,32 @@ import google.generativeai as genai
 from PIL import Image
 import io
 import time
+import shutil
 from google.api_core.exceptions import ResourceExhausted
 from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecretkey")  # For flash messages
+app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY", "supersecretkey")  # For flash messages and sessions
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['OUTPUT_FOLDER'] = 'outputs'
+app.config['ALLOWED_EXTENSIONS'] = {'mp4', 'avi', 'mov'}
 
-# Configure upload folder and allowed extensions
-UPLOAD_FOLDER = 'uploads'
-OUTPUT_FOLDER = 'outputs'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov'}
+# Email configuration
+app.config['EMAIL_HOST'] = 'smtp.gmail.com'
+app.config['EMAIL_PORT'] = 587
+app.config['EMAIL_HOST_USER'] = os.getenv('EMAIL_HOST_USER')
+app.config['EMAIL_HOST_PASSWORD'] = os.getenv('EMAIL_HOST_PASSWORD')
+app.config['EMAIL_USE_TLS'] = True
+
+# Ensure upload and output directories exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 # Configure Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -39,7 +47,7 @@ main_bp = Blueprint('main', __name__)
 
 # Check allowed file extensions
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 # Routes for static pages
 @main_bp.route('/')
@@ -60,21 +68,31 @@ def contact():
         name = request.form.get('name')
         email = request.form.get('email')
         message = request.form.get('message')
-        try:
-            # Send email (configure your SMTP server)
-            msg = MIMEText(f"Name: {name}\nEmail: {email}\nMessage: {message}")
-            msg['Subject'] = 'Contact Form Submission - EchoLens'
-            msg['From'] = os.getenv("SMTP_EMAIL")
-            msg['To'] = os.getenv("SMTP_EMAIL")
-            with smtplib.SMTP(os.getenv("SMTP_SERVER"), os.getenv("SMTP_PORT")) as server:
-                server.starttls()
-                server.login(os.getenv("SMTP_EMAIL"), os.getenv("SMTP_PASSWORD"))
-                server.send_message(msg)
-            flash('Thank you for your message! We will get back to you soon.', 'success')
+
+        if not name or not email or not message:
+            flash('All fields are required!', 'error')
             return redirect(url_for('main.contact'))
+
+        # Send email
+        msg = MIMEMultipart()
+        msg['From'] = app.config['EMAIL_HOST_USER']
+        msg['To'] = app.config['EMAIL_HOST_USER']  # Sending to yourself
+        msg['Subject'] = f"New Contact Form Submission from {name}"
+        body = f"Name: {name}\nEmail: {email}\nMessage: {message}"
+        msg.attach(MIMEText(body, 'plain'))
+
+        try:
+            server = smtplib.SMTP(app.config['EMAIL_HOST'], app.config['EMAIL_PORT'])
+            server.starttls()
+            server.login(app.config['EMAIL_HOST_USER'], app.config['EMAIL_HOST_PASSWORD'])
+            server.sendmail(app.config['EMAIL_HOST_USER'], app.config['EMAIL_HOST_USER'], msg.as_string())
+            server.quit()
+            flash('Thank you for your message! We will get back to you soon.', 'success')
         except Exception as e:
             flash(f'Error sending message: {str(e)}', 'error')
-            return redirect(url_for('main.contact'))
+
+        return redirect(url_for('main.contact'))
+
     return render_template('contact.html')
 
 @main_bp.route('/analysis')
@@ -84,11 +102,15 @@ def analysis():
 # Preprocess video
 def preprocess_video(input_path, output_path, target_size=(224, 224)):
     cap = cv2.VideoCapture(input_path)
+    if not cap.isOpened():
+        raise ValueError("Could not open video file.")
+    
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, target_size)
+    
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -97,6 +119,7 @@ def preprocess_video(input_path, output_path, target_size=(224, 224)):
         normalized_frame = resized_frame / 255.0
         output_frame = (normalized_frame * 255).astype(np.uint8)
         out.write(output_frame)
+    
     cap.release()
     out.release()
     cv2.destroyAllWindows()
@@ -108,7 +131,8 @@ def extract_keyframes(video_path, output_video_raw, output_video_annotated, outp
     ret, prev_frame = cap.read()
     if not ret:
         cap.release()
-        return 0, []
+        raise ValueError("Could not read the first frame of the video.")
+    
     fps = cap.get(cv2.CAP_PROP_FPS)
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -116,6 +140,7 @@ def extract_keyframes(video_path, output_video_raw, output_video_annotated, outp
     out_raw = cv2.VideoWriter(output_video_raw, fourcc, fps, (frame_width, frame_height))
     out_annotated = cv2.VideoWriter(output_video_annotated, fourcc, fps, (frame_width, frame_height))
     out_significant = cv2.VideoWriter(output_video_significant, fourcc, fps, (frame_width, frame_height))
+    
     prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
     frame_count = 0
     event_active = False
@@ -227,6 +252,7 @@ def extract_keyframes(video_path, output_video_raw, output_video_annotated, outp
                 saved_significant_frames += 1
         prev_gray = current_gray
         prev_frame = current_frame.copy()
+    
     cap.release()
     out_raw.release()
     out_annotated.release()
@@ -245,6 +271,7 @@ def load_i3d_ucf_finetuned(repo_id="Ahmeddawood0001/i3d_ucf_finetuned", filename
             x = self.i3d(x)
             x = self.dropout(x)
             return x
+    
     device = torch.device("cpu")
     model = I3DClassifier(num_classes=8).to(device)
     weights_path = hf_hub_download(repo_id=repo_id, filename=filename)
@@ -327,6 +354,7 @@ def generate_descriptions_and_summary(frames, video_prediction):
                     time.sleep(retry_delay)
                 else:
                     raise Exception("Gemini API quota exhausted after max retries.")
+    
     summary_prompt = (
         "Here are multiple descriptions of frames from a surveillance video:\n"
         + "\n".join(descriptions.values()) +
@@ -345,6 +373,7 @@ def generate_descriptions_and_summary(frames, video_prediction):
                 time.sleep(retry_delay)
             else:
                 raise Exception("Gemini API quota exhausted for summary after max retries.")
+    
     return descriptions, "Summary generation failed due to quota limits."
 
 # Video analysis route
@@ -360,14 +389,15 @@ def upload_video():
         video_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(video_path)
 
-        try:
-            # Define output paths
-            output_video_preprocessed = os.path.join(OUTPUT_FOLDER, "output_video_preprocessing.mp4")
-            output_video_raw = os.path.join(OUTPUT_FOLDER, "keyframes_only_output.mp4")
-            output_video_annotated = os.path.join(OUTPUT_FOLDER, "keyframes_annotated_output.mp4")
-            output_video_significant = os.path.join(OUTPUT_FOLDER, "significant_keyframes_output.mp4")
-            frames_dir = os.path.join(OUTPUT_FOLDER, "frames")
+        # Define output paths
+        output_video_preprocessed = os.path.join(app.config['OUTPUT_FOLDER'], "output_video_preprocessing.mp4")
+        output_video_raw = os.path.join(app.config['OUTPUT_FOLDER'], "keyframes_only_output.mp4")
+        output_video_annotated = os.path.join(app.config['OUTPUT_FOLDER'], "keyframes_annotated_output.mp4")
+        output_video_significant = os.path.join(app.config['OUTPUT_FOLDER'], "significant_keyframes_output.mp4")
+        frames_dir = os.path.join(app.config['OUTPUT_FOLDER'], "frames")
 
+        frames = []
+        try:
             # Step 1: Preprocess video
             preprocess_video(video_path, output_video_preprocessed)
 
@@ -403,12 +433,13 @@ def upload_video():
             return jsonify({'error': str(e)}), 500
 
         finally:
-            # Clean up
-            if os.path.exists(video_path):
-                os.remove(video_path)
-            for frame in frames:
-                if os.path.exists(frame):
-                    os.remove(frame)
+            # Clean up temporary files
+            for path in [video_path, output_video_preprocessed, output_video_raw, 
+                        output_video_annotated, output_video_significant]:
+                if os.path.exists(path):
+                    os.remove(path)
+            if os.path.exists(frames_dir):
+                shutil.rmtree(frames_dir)
 
     return jsonify({'error': 'Invalid file type'}), 400
 

@@ -1,77 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Analysis App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center">Video Analysis</h1>
-        <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="video">
-                Upload Video (MP4, AVI, MOV)
-            </label>
-            <input type="file" id="video" accept="video/mp4,video/avi,video/mov"
-                   class="w-full p-2 border rounded">
+{% extends 'base.html' %}
+{% block title %}EchoLens - Empowering Video Intelligence{% endblock %}
+{% block content %}
+    <section class="bg-blue-900 text-white py-20 text-center">
+        <div class="container mx-auto">
+            <h1 class="text-4xl font-bold mb-4">Welcome to EchoLens</h1>
+            <p class="text-xl mb-6">Empowering Insights Through Video Intelligence</p>
+            <a href="/analysis" class="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600">Try Video Analysis</a>
         </div>
-        <button id="uploadBtn"
-                class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-            Upload and Analyze
-        </button>
-        <div id="loading" class="hidden mt-4 text-center">
-            <p class="text-gray-600">Processing... This may take a while.</p>
+    </section>
+    <section class="py-12">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-8">Why EchoLens?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Advanced AI</h3>
+                    <p>Our cutting-edge AI analyzes videos to detect key events with high accuracy.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">User-Friendly</h3>
+                    <p>Upload videos and get insights in seconds with our intuitive interface.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Scalable Solutions</h3>
+                    <p>From startups to enterprises, EchoLens scales to meet your needs.</p>
+                </div>
+            </div>
         </div>
-        <div id="results" class="mt-4 hidden">
-            <h2 class="text-xl font-bold mb-2">Analysis Results</h2>
-            <p><strong>Predicted Event:</strong> <span id="predictedLabel"></span></p>
-            <p><strong>Confidence:</strong> <span id="confidence"></span></p>
-            <h3 class="text-lg font-semibold mt-4">Event Summary</h3>
-            <p id="summary"></p>
-            <h3 class="text-lg font-semibold mt-4">Detected Events</h3>
-            <ul id="events" class="list-disc pl-5"></ul>
-        </div>
-    </div>
-    <script>
-        document.getElementById('uploadBtn').addEventListener('click', async () => {
-            const videoInput = document.getElementById('video');
-            if (!videoInput.files.length) {
-                alert('Please select a video file.');
-                return;
-            }
-            const file = videoInput.files[0];
-            const formData = new FormData();
-            formData.append('video', file);
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('results').classList.add('hidden');
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                if (response.ok) {
-                    document.getElementById('predictedLabel').textContent = result.predicted_label;
-                    document.getElementById('confidence').textContent = result.confidence.toFixed(4);
-                    document.getElementById('summary').textContent = result.summary;
-                    const eventsList = document.getElementById('events');
-                    eventsList.innerHTML = '';
-                    result.events.forEach((event, index) => {
-                        const li = document.createElement('li');
-                        li.textContent = `Event ${index + 1}: Start ${event.start_time.toFixed(2)}s (Frame ${event.start_frame}), End ${event.end_time.toFixed(2)}s (Frame ${event.end_frame})`;
-                        eventsList.appendChild(li);
-                    });
-                    document.getElementById('results').classList.remove('hidden');
-                } else {
-                    alert('Error: ' + result.error);
-                }
-            } catch (error) {
-                alert('An error occurred: ' + error.message);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-            }
-        });
-    </script>
-</body>
-</html>
+    </section>
+{% endblock %}
