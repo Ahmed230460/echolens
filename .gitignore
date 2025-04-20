@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+
+# Jupyter Notebooks
+*.ipynb
+*.ipynb_checkpoints/
+
+# Project-specific
+uploads/*
+outputs/*
+yolo12n.pt
+botsort.yaml
+
+# IDE files
+.vscode/
+.idea/
+
+# OS-specific
+.DS_Store
+Thumbs.db

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Features - EchoLens{% endblock %}
+{% block content %}
+    <section class="py-12">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-8">Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Event Detection</h3>
+                    <p>Automatically detect critical events in videos, such as accidents or anomalies, with high accuracy.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Real-Time Analysis</h3>
+                    <p>Analyze videos in real-time to provide instant insights for security and monitoring.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Scalable Platform</h3>
+                    <p>Built to handle large-scale video processing for enterprises and startups alike.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Easy Integration</h3>
+                    <p>Integrate EchoLens with your existing systems via our API for seamless workflows.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

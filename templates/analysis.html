@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Video Analysis - EchoLens{% endblock %}
+{% block content %}
+    <section class="py-12">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-8">Video Analysis</h2>
+            <div class="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="video">
+                        Upload Video (MP4, AVI, MOV)
+                    </label>
+                    <input type="file" id="video" accept="video/mp4,video/avi,video/mov"
+                           class="w-full p-2 border rounded">
+                </div>
+                <button id="uploadBtn"
+                        class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+                    Upload and Analyze
+                </button>
+                <div id="loading" class="hidden mt-4">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-gray-600 text-center mt-2">Processing... This may take a while.</p>
+                </div>
+                <div id="results" class="mt-4 hidden">
+                    <h3 class="text-xl font-bold mb-2">Analysis Results</h3>
+                    <p><strong>Predicted Event:</strong> <span id="predictedLabel"></span></p>
+                    <p><strong>Confidence:</strong> <span id="confidence"></span></p>
+                    <h4 class="text-lg font-semibold mt-4">Event Summary</h4>
+                    <p id="summary"></p>
+                    <h4 class="text-lg font-semibold mt-4">Detected Events</h4>
+                    <ul id="events" class="list-disc pl-5"></ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script src="/static/js/scripts.js"></script>
+{% endblock %}

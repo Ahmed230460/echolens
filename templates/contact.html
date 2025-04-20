@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Contact - EchoLens{% endblock %}
+{% block content %}
+    <section class="py-12">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-8">Contact Us</h2>
+            <div class="max-w-md mx-auto">
+                <form method="POST" action="{{ url_for('main.contact') }}">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="name">Name</label>
+                        <input type="text" id="name" name="name" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+                        <input type="email" id="email" name="email" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="message">Message</label>
+                        <textarea id="message" name="message" class="w-full p-2 border rounded" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}

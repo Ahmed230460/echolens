@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EchoLens{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-blue-900 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold flex items-center">
+                <img src="/static/img/logo.png" alt="EchoLens Logo" class="h-8 mr-2">
+                EchoLens
+            </a>
+            <div class="space-x-4">
+                <a href="/" class="hover:text-orange-500">Home</a>
+                <a href="/analysis" class="hover:text-orange-500">Analysis</a>
+                <a href="/features" class="hover:text-orange-500">Features</a>
+                <a href="/about" class="hover:text-orange-500">About</a>
+                <a href="/contact" class="hover:text-orange-500">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto py-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="bg-{% if category == 'success' %}green{% else %}red{% endif %}-100 border border-{% if category == 'success' %}green{% else %}red{% endif %}-400 text-{% if category == 'success' %}green{% else %}red{% endif %}-700 px-4 py-3 rounded mb-4">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white p-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 EchoLens. All rights reserved.</p>
+            <p class="mt-2">
+                <a href="/contact" class="hover:text-orange-500">Contact Us</a> |
+                <a href="/about" class="hover:text-orange-500">About</a> |
+                <a href="/features" class="hover:text-orange-500">Features</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
